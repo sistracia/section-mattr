@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  build:
     timeout-minutes: 60
     runs-on: ${{ matrix.os }}
     strategy:
