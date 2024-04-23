@@ -137,8 +137,6 @@ module Mattrial =
 
 [<Struct>]
 type NewMattr =
-    { name: string }
-
     static member sections(input: string) : Mattr<string> =
         let file: Mattr<string> = Mattrial.toObject input
         let option: MattrOption<string> = Mattrial.defaultOption Mattrial.identity
