@@ -1,4 +1,4 @@
-﻿module SectionMattr
+﻿namespace SectionMattr
 
 open System.Text.RegularExpressions
 

@@ -110,7 +110,7 @@ let tests =
           }
 
           test "should use a custom parser on sections" {
-              let input =
+              let input: string =
                   "---json\n{\"title\": \"bar\"}\n---\n\nfoo\n---json\n{\"title\": \"One\"}\n---\nThis is one"
 
               let parse (section: MattrSection<string>) (_: MattrSection<ParsedData> array) : MattrSection<ParsedData> =
@@ -130,7 +130,7 @@ let tests =
           }
 
           test "should parse multiple sections" {
-              let input = read "multiple.md"
+              let input: string = read "multiple.md"
 
               Expect.equal
                   (NewMattr.sections input)
@@ -149,7 +149,7 @@ let tests =
           }
 
           test "should not parse non-sections" {
-              let input = read "hr.md"
+              let input: string = read "hr.md"
 
               Expect.equal
                   (NewMattr.sections input)
