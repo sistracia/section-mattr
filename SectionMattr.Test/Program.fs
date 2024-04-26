@@ -8,6 +8,11 @@ type ParsedData = { title: string }
 let read (fixtureName: string) : string =
     File.ReadAllText(Path.Combine("../../..", "fixtures", fixtureName))
 
+type MyJsonParser() =
+    interface IMattrParser<ParsedData> with
+        member _.Parse(section: MattrSection<string>, _: MattrSection<ParsedData> array) : MattrSection<ParsedData> =
+            Mattrial.appendData (JsonSerializer.Deserialize<ParsedData>(section.data)) section
+
 [<Tests>]
 let tests =
     testList
@@ -97,7 +102,7 @@ let tests =
                   "~~~\ntitle: bar\n~~~\n\nfoo\n~~~one\ntitle: One\n~~~\nThis is one"
 
               Expect.equal
-                  (NewMattr.sections (input, { MattrOption1.section_delimiter = "~~~" }))
+                  (NewMattr.sections (input, (Mattrial.defaultOption ()).SetDelimiter("~~~")))
                   { Mattr.content = ""
                     Mattr.sections =
                       [| { MattrSection.key = ""
@@ -113,11 +118,8 @@ let tests =
               let input: string =
                   "---json\n{\"title\": \"bar\"}\n---\n\nfoo\n---json\n{\"title\": \"One\"}\n---\nThis is one"
 
-              let parse (section: MattrSection<string>) (_: MattrSection<ParsedData> array) : MattrSection<ParsedData> =
-                  Mattrial.appendData (JsonSerializer.Deserialize<ParsedData>(section.data)) section
-
               Expect.equal
-                  (NewMattr.sections (input, parse))
+                  (NewMattr.sections (input, MyJsonParser()))
                   { Mattr.content = ""
                     Mattr.sections =
                       [| { MattrSection.key = "json"

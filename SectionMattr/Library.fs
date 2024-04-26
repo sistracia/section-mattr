@@ -3,40 +3,54 @@
 open System.Text.RegularExpressions
 
 [<Struct>]
-type MattrSection<'p> =
+type MattrSection<'TData> =
     { key: string
-      data: 'p
+      data: 'TData
       content: string }
 
-[<Struct>]
-type Mattr<'p> =
-    { content: string
-      sections: MattrSection<'p> array }
+type IMattrParser<'TData> =
+    abstract member Parse: MattrSection<string> * MattrSection<'TData> array -> MattrSection<'TData>
 
-type Parser<'p> = MattrSection<string> -> MattrSection<'p> array -> MattrSection<'p>
-
-[<Struct>]
-type MattrOption1 = { section_delimiter: string }
+type DefaultMattrParser() =
+    interface IMattrParser<string> with
+        member _.Parse(section: MattrSection<string>, _: MattrSection<string> array) : MattrSection<string> = section
 
 [<Struct>]
-type MattrOption2<'p> = { parse: Parser<'p> }
-
-[<Struct>]
-type MattrOption<'p> =
+type MattrOption<'TData> =
     { section_delimiter: string
-      parse: Parser<'p> }
+      parser: IMattrParser<'TData> }
+
+    member this.SetDelimiter(delimiter: string) =
+        { parser = this.parser
+          section_delimiter = delimiter }
+
+    member this.SetParser(parser: IMattrParser<'TNewData>) =
+        { section_delimiter = this.section_delimiter
+          parser = parser }
+
+    static member Default =
+        { MattrOption.section_delimiter = "---"
+          MattrOption.parser = DefaultMattrParser() }
+
+
+[<Struct>]
+type Mattr<'TData> =
+    { content: string
+      sections: MattrSection<'TData> array }
+
+type Parser<'TData> = MattrSection<string> -> MattrSection<'TData> array -> MattrSection<'TData>
 
 module Mattrial =
-    let defaultOption<'p> (parser: Parser<'p>) : MattrOption<'p> =
+    let defaultOption () =
         { MattrOption.section_delimiter = "---"
-          MattrOption.parse = parser }
+          MattrOption.parser = DefaultMattrParser() }
 
     let createSection () : MattrSection<string> =
         { MattrSection.key = ""
           MattrSection.data = ""
           MattrSection.content = "" }
 
-    let toObject<'p> (input: string) : Mattr<'p> =
+    let toObject<'TData> (input: string) : Mattr<'TData> =
         { Mattr.content = input
           Mattr.sections = [||] }
 
@@ -56,20 +70,20 @@ module Mattrial =
         else
             true
 
-    let appendData<'p> (data: 'p) (section: MattrSection<string>) : MattrSection<'p> =
-        let parsed: MattrSection<'p> =
+    let appendData<'TData> (data: 'TData) (section: MattrSection<string>) : MattrSection<'TData> =
+        let parsed: MattrSection<'TData> =
             { MattrSection.key = section.key
               MattrSection.content = section.content
               MattrSection.data = data }
 
         parsed
 
-    let parse<'p> (entity: Mattr<'p>) (opts: MattrOption<'p>) =
+    let parse<'TData> (entity: Mattr<'TData>) (opts: MattrOption<'TData>) =
         let delim: string = opts.section_delimiter
         let lines: string array = Regex.Split(entity.content, @"\r?\n")
 
-        let mutable _entity: Mattr<'p> = entity
-        let mutable sections: MattrSection<'p> array option = None
+        let mutable _entity: Mattr<'TData> = entity
+        let mutable sections: MattrSection<'TData> array option = None
         let mutable content: string array = [||]
         let mutable section: MattrSection<string> = createSection ()
         let mutable stack: string array = [||]
@@ -88,8 +102,8 @@ module Mattrial =
 
                 sections <-
                     match sections with
-                    | Some(sections: MattrSection<'p> array) ->
-                        Some(Array.append sections [| (opts.parse section sections) |])
+                    | Some(sections: MattrSection<'TData> array) ->
+                        Some(Array.append sections [| (opts.parser.Parse(section, sections)) |])
                     | None -> None
 
                 section <- createSection ()
@@ -132,56 +146,32 @@ module Mattrial =
             closeSection (content |> String.concat "\n")
 
         match sections with
-        | Some(sections: MattrSection<'p> array) -> { _entity with sections = sections }
+        | Some(sections: MattrSection<'TData> array) -> { _entity with sections = sections }
         | None -> _entity
 
 [<Struct>]
 type NewMattr =
     static member sections(input: string) : Mattr<string> =
         let file: Mattr<string> = Mattrial.toObject input
-        let option: MattrOption<string> = Mattrial.defaultOption Mattrial.identity
+        let option: MattrOption<string> = Mattrial.defaultOption ()
         Mattrial.parse file option
 
-    static member sections<'p>(input: string, parser: Parser<'p>) : Mattr<'p> =
-        let file: Mattr<'p> = Mattrial.toObject input
-        let option: MattrOption<'p> = Mattrial.defaultOption parser
+    static member sections<'TData>(input: string, parser: IMattrParser<'TData>) : Mattr<'TData> =
+        let file: Mattr<'TData> = Mattrial.toObject input
+        let option: MattrOption<'TData> = (Mattrial.defaultOption ()).SetParser parser
         Mattrial.parse file option
 
-    static member sections(input: string, option: MattrOption1) : Mattr<string> =
-        let file: Mattr<string> = Mattrial.toObject input
-
-        let option: MattrOption<string> =
-            { MattrOption.section_delimiter = option.section_delimiter
-              MattrOption.parse = Mattrial.identity }
-
-        Mattrial.parse file option
-
-    static member sections<'p>(input: string, option: MattrOption2<'p>) : Mattr<'p> =
-        let file: Mattr<'p> = Mattrial.toObject input
-        let option: MattrOption<'p> = Mattrial.defaultOption option.parse
-        Mattrial.parse file option
-
-    static member sections<'p>(input: string, option: MattrOption<'p>) : Mattr<'p> =
-        let file: Mattr<'p> = Mattrial.toObject input
+    static member sections<'TData>(input: string, option: MattrOption<'TData>) : Mattr<'TData> =
+        let file: Mattr<'TData> = Mattrial.toObject input
         Mattrial.parse file option
 
     static member sections(entity: Mattr<string>) : Mattr<string> =
-        let option: MattrOption<string> = Mattrial.defaultOption Mattrial.identity
+        let option: MattrOption<string> = Mattrial.defaultOption ()
         Mattrial.parse entity option
 
-    static member sections<'p>(entity: Mattr<'p>, parser: Parser<'p>) : Mattr<'p> =
-        let option: MattrOption<'p> = Mattrial.defaultOption parser
+    static member sections<'TData>(entity: Mattr<'TData>, parser: IMattrParser<'TData>) : Mattr<'TData> =
+        let option: MattrOption<'TData> = (Mattrial.defaultOption ()).SetParser parser
         Mattrial.parse entity option
 
-    static member sections(entity: Mattr<string>, option: MattrOption1) : Mattr<string> =
-        let option: MattrOption<string> =
-            { MattrOption.section_delimiter = option.section_delimiter
-              MattrOption.parse = Mattrial.identity }
-
+    static member sections<'TData>(entity: Mattr<'TData>, option: MattrOption<'TData>) : Mattr<'TData> =
         Mattrial.parse entity option
-
-    static member sections<'p>(entity: Mattr<'p>, option: MattrOption2<'p>) : Mattr<'p> =
-        let option: MattrOption<'p> = Mattrial.defaultOption option.parse
-        Mattrial.parse entity option
-
-    static member sections<'p>(entity: Mattr<'p>, option: MattrOption<'p>) : Mattr<'p> = Mattrial.parse entity option
