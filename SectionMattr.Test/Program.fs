@@ -5,8 +5,11 @@ open System.Text.Json
 
 type ParsedData = { title: string }
 
-let read (fixtureName: string) : string =
+let readString (fixtureName: string) : string =
     File.ReadAllText(Path.Combine("../../..", "fixtures", fixtureName))
+
+let readBuffer (fixtureName: string) : byte array =
+    File.ReadAllBytes(Path.Combine("../../..", "fixtures", fixtureName))
 
 type MyJsonParser() =
     interface IMattrParser<ParsedData> with
@@ -131,8 +134,8 @@ let tests =
                   "should be equal"
           }
 
-          test "should parse multiple sections" {
-              let input: string = read "multiple.md"
+          test "should parse string with multiple sections" {
+              let input: string = readString "multiple.md"
 
               Expect.equal
                   (NewMattr.sections input)
@@ -150,8 +153,50 @@ let tests =
                   "should be equal"
           }
 
-          test "should not parse non-sections" {
-              let input: string = read "hr.md"
+          test "should not parse string non-sections" {
+              let input: string = readString "hr.md"
+
+              Expect.equal
+                  (NewMattr.sections input)
+                  { Mattr.content = ""
+                    Mattr.sections =
+                      [| { MattrSection.key = "yaml"
+                           MattrSection.data = "title: I'm front matter"
+                           MattrSection.content =
+                             "\nThis page has front matter that should be parsed before the sections.\n" }
+                         { MattrSection.key = "aaa"
+                           MattrSection.data = "title: First section"
+                           MattrSection.content = "\nSection one.\n" }
+                         { MattrSection.key = "bbb"
+                           MattrSection.data = "title: Non-section horizontal rules"
+                           MattrSection.content = "\nPart 1.\n\n---\n\nPart 2.\n\n---\n\nPart 3.\n" }
+                         { MattrSection.key = "ccc"
+                           MattrSection.data = "title: Third section"
+                           MattrSection.content = "\nSection three.\n" } |] }
+                  "should be equal"
+          }
+
+          test "should parse buffer with multiple sections" {
+              let input: byte array = readBuffer "multiple.md"
+
+              Expect.equal
+                  (NewMattr.sections input)
+                  { Mattr.content = ""
+                    Mattr.sections =
+                      [| { MattrSection.key = ""
+                           MattrSection.data = "title: bar"
+                           MattrSection.content = "\nfoo\n" }
+                         { MattrSection.key = "one"
+                           MattrSection.data = "title: One"
+                           MattrSection.content = "This is one\n" }
+                         { MattrSection.key = "two"
+                           MattrSection.data = "title: Two"
+                           MattrSection.content = "This is two\n" } |] }
+                  "should be equal"
+          }
+
+          test "should not parse buffer non-sections" {
+              let input: byte array = readBuffer "hr.md"
 
               Expect.equal
                   (NewMattr.sections input)

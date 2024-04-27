@@ -1,5 +1,6 @@
 ﻿namespace SectionMattr
 
+open System.Text
 open System.Text.RegularExpressions
 
 [<Struct>]
@@ -50,8 +51,12 @@ module Mattrial =
           MattrSection.data = ""
           MattrSection.content = "" }
 
-    let toObject<'TData> (input: string) : Mattr<'TData> =
+    let stringToObject<'TData> (input: string) : Mattr<'TData> =
         { Mattr.content = input
+          Mattr.sections = [||] }
+
+    let bufferToObject<'TData> (input: byte array) : Mattr<'TData> =
+        { Mattr.content = Encoding.Default.GetString input
           Mattr.sections = [||] }
 
     let identity (section: MattrSection<string>) (_: MattrSection<string> array) : MattrSection<string> = section
@@ -152,17 +157,31 @@ module Mattrial =
 [<Struct>]
 type NewMattr =
     static member sections(input: string) : Mattr<string> =
-        let file: Mattr<string> = Mattrial.toObject input
+        let file: Mattr<string> = Mattrial.stringToObject input
         let option: MattrOption<string> = Mattrial.defaultOption ()
         Mattrial.parse file option
 
     static member sections<'TData>(input: string, parser: IMattrParser<'TData>) : Mattr<'TData> =
-        let file: Mattr<'TData> = Mattrial.toObject input
+        let file: Mattr<'TData> = Mattrial.stringToObject input
         let option: MattrOption<'TData> = (Mattrial.defaultOption ()).SetParser parser
         Mattrial.parse file option
 
     static member sections<'TData>(input: string, option: MattrOption<'TData>) : Mattr<'TData> =
-        let file: Mattr<'TData> = Mattrial.toObject input
+        let file: Mattr<'TData> = Mattrial.stringToObject input
+        Mattrial.parse file option
+
+    static member sections(input: byte array) : Mattr<string> =
+        let file: Mattr<string> = Mattrial.bufferToObject input
+        let option: MattrOption<string> = Mattrial.defaultOption ()
+        Mattrial.parse file option
+
+    static member sections<'TData>(input: byte array, parser: IMattrParser<'TData>) : Mattr<'TData> =
+        let file: Mattr<'TData> = Mattrial.bufferToObject input
+        let option: MattrOption<'TData> = (Mattrial.defaultOption ()).SetParser parser
+        Mattrial.parse file option
+
+    static member sections<'TData>(input: byte array, option: MattrOption<'TData>) : Mattr<'TData> =
+        let file: Mattr<'TData> = Mattrial.bufferToObject input
         Mattrial.parse file option
 
     static member sections(entity: Mattr<string>) : Mattr<string> =
