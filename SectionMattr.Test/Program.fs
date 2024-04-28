@@ -14,7 +14,7 @@ let readBuffer (fixtureName: string) : byte array =
 type MyJsonParser() =
     interface IMattrParser<ParsedData> with
         member _.Parse(section: MattrSection<string>, _: MattrSection<ParsedData> array) : MattrSection<ParsedData> =
-            Mattrial.appendData (JsonSerializer.Deserialize<ParsedData>(section.data)) section
+            NewMattr.AppendData (JsonSerializer.Deserialize<ParsedData>(section.Data)) section
 
 [<Tests>]
 let tests =
@@ -24,49 +24,49 @@ let tests =
 
           test "should return a file object" {
               Expect.equal
-                  (NewMattr.sections "")
-                  { Mattr.content = ""
-                    Mattr.sections = [||] }
+                  (NewMattr.Sections "")
+                  { Mattr.Content = ""
+                    Mattr.Sections = [||] }
                   "should be equal"
 
               Expect.equal
-                  (NewMattr.sections "foo")
-                  { Mattr.content = "foo"
-                    Mattr.sections = [||] }
+                  (NewMattr.Sections "foo")
+                  { Mattr.Content = "foo"
+                    Mattr.Sections = [||] }
                   "should be equal"
           }
 
           test "should correctly parse non-sections" {
               Expect.equal
-                  (NewMattr.sections "foo\n---\nbar")
-                  { Mattr.content = "foo\n---\nbar"
-                    Mattr.sections = [||] }
+                  (NewMattr.Sections "foo\n---\nbar")
+                  { Mattr.Content = "foo\n---\nbar"
+                    Mattr.Sections = [||] }
                   "should be equal"
 
               Expect.equal
-                  (NewMattr.sections "foo\n---\nbar\n---")
-                  { Mattr.content = "foo\n---\nbar\n---"
-                    Mattr.sections = [||] }
+                  (NewMattr.Sections "foo\n---\nbar\n---")
+                  { Mattr.Content = "foo\n---\nbar\n---"
+                    Mattr.Sections = [||] }
                   "should be equal"
           }
 
           test "should parse front-matter without language" {
               Expect.equal
-                  (NewMattr.sections "---\ntitle: bar\n---\n\nfoo")
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "title: bar"
-                           MattrSection.content = "\nfoo" } |] }
+                  (NewMattr.Sections "---\ntitle: bar\n---\n\nfoo")
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "title: bar"
+                           MattrSection.Content = "\nfoo" } |] }
                   "should be equal"
 
               Expect.equal
-                  (NewMattr.sections "---\nfoo\n---\nbar")
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "foo"
-                           MattrSection.content = "bar" } |] }
+                  (NewMattr.Sections "---\nfoo\n---\nbar")
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "foo"
+                           MattrSection.Content = "bar" } |] }
                   "should be equal"
           }
 
@@ -74,12 +74,12 @@ let tests =
               let input: string = "---json\n{\"title\": \"bar\"}\n---\n\nfoo"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = "json"
-                           MattrSection.data = "{\"title\": \"bar\"}"
-                           MattrSection.content = "\nfoo" } |] }
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = "json"
+                           MattrSection.Data = "{\"title\": \"bar\"}"
+                           MattrSection.Content = "\nfoo" } |] }
                   "should be equal"
           }
 
@@ -88,15 +88,15 @@ let tests =
                   "---\ntitle: bar\n---\n\nfoo\n---one\ntitle: One\n---\nThis is one"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "title: bar"
-                           MattrSection.content = "\nfoo" }
-                         { MattrSection.key = "one"
-                           MattrSection.data = "title: One"
-                           MattrSection.content = "This is one" } |] }
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "title: bar"
+                           MattrSection.Content = "\nfoo" }
+                         { MattrSection.Key = "one"
+                           MattrSection.Data = "title: One"
+                           MattrSection.Content = "This is one" } |] }
                   "should be equal"
           }
 
@@ -105,15 +105,15 @@ let tests =
                   "~~~\ntitle: bar\n~~~\n\nfoo\n~~~one\ntitle: One\n~~~\nThis is one"
 
               Expect.equal
-                  (NewMattr.sections (input, (Mattrial.defaultOption ()).SetDelimiter("~~~")))
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "title: bar"
-                           MattrSection.content = "\nfoo" }
-                         { MattrSection.key = "one"
-                           MattrSection.data = "title: One"
-                           MattrSection.content = "This is one" } |] }
+                  (NewMattr.Sections(input, (NewMattr.DefaultOption ()).SetDelimiter("~~~")))
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "title: bar"
+                           MattrSection.Content = "\nfoo" }
+                         { MattrSection.Key = "one"
+                           MattrSection.Data = "title: One"
+                           MattrSection.Content = "This is one" } |] }
                   "should be equal"
           }
 
@@ -122,15 +122,15 @@ let tests =
                   "---json\n{\"title\": \"bar\"}\n---\n\nfoo\n---json\n{\"title\": \"One\"}\n---\nThis is one"
 
               Expect.equal
-                  (NewMattr.sections (input, MyJsonParser()))
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = "json"
-                           MattrSection.data = { ParsedData.title = "bar" }
-                           MattrSection.content = "\nfoo" }
-                         { MattrSection.key = "json"
-                           MattrSection.data = { ParsedData.title = "One" }
-                           MattrSection.content = "This is one" } |] }
+                  (NewMattr.Sections(input, MyJsonParser()))
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = "json"
+                           MattrSection.Data = { ParsedData.title = "bar" }
+                           MattrSection.Content = "\nfoo" }
+                         { MattrSection.Key = "json"
+                           MattrSection.Data = { ParsedData.title = "One" }
+                           MattrSection.Content = "This is one" } |] }
                   "should be equal"
           }
 
@@ -138,18 +138,18 @@ let tests =
               let input: string = readString "multiple.md"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "title: bar"
-                           MattrSection.content = "\nfoo\n" }
-                         { MattrSection.key = "one"
-                           MattrSection.data = "title: One"
-                           MattrSection.content = "This is one\n" }
-                         { MattrSection.key = "two"
-                           MattrSection.data = "title: Two"
-                           MattrSection.content = "This is two\n" } |] }
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "title: bar"
+                           MattrSection.Content = "\nfoo\n" }
+                         { MattrSection.Key = "one"
+                           MattrSection.Data = "title: One"
+                           MattrSection.Content = "This is one\n" }
+                         { MattrSection.Key = "two"
+                           MattrSection.Data = "title: Two"
+                           MattrSection.Content = "This is two\n" } |] }
                   "should be equal"
           }
 
@@ -157,22 +157,22 @@ let tests =
               let input: string = readString "hr.md"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = "yaml"
-                           MattrSection.data = "title: I'm front matter"
-                           MattrSection.content =
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = "yaml"
+                           MattrSection.Data = "title: I'm front matter"
+                           MattrSection.Content =
                              "\nThis page has front matter that should be parsed before the sections.\n" }
-                         { MattrSection.key = "aaa"
-                           MattrSection.data = "title: First section"
-                           MattrSection.content = "\nSection one.\n" }
-                         { MattrSection.key = "bbb"
-                           MattrSection.data = "title: Non-section horizontal rules"
-                           MattrSection.content = "\nPart 1.\n\n---\n\nPart 2.\n\n---\n\nPart 3.\n" }
-                         { MattrSection.key = "ccc"
-                           MattrSection.data = "title: Third section"
-                           MattrSection.content = "\nSection three.\n" } |] }
+                         { MattrSection.Key = "aaa"
+                           MattrSection.Data = "title: First section"
+                           MattrSection.Content = "\nSection one.\n" }
+                         { MattrSection.Key = "bbb"
+                           MattrSection.Data = "title: Non-section horizontal rules"
+                           MattrSection.Content = "\nPart 1.\n\n---\n\nPart 2.\n\n---\n\nPart 3.\n" }
+                         { MattrSection.Key = "ccc"
+                           MattrSection.Data = "title: Third section"
+                           MattrSection.Content = "\nSection three.\n" } |] }
                   "should be equal"
           }
 
@@ -180,18 +180,18 @@ let tests =
               let input: byte array = readBuffer "multiple.md"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = ""
-                           MattrSection.data = "title: bar"
-                           MattrSection.content = "\nfoo\n" }
-                         { MattrSection.key = "one"
-                           MattrSection.data = "title: One"
-                           MattrSection.content = "This is one\n" }
-                         { MattrSection.key = "two"
-                           MattrSection.data = "title: Two"
-                           MattrSection.content = "This is two\n" } |] }
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = ""
+                           MattrSection.Data = "title: bar"
+                           MattrSection.Content = "\nfoo\n" }
+                         { MattrSection.Key = "one"
+                           MattrSection.Data = "title: One"
+                           MattrSection.Content = "This is one\n" }
+                         { MattrSection.Key = "two"
+                           MattrSection.Data = "title: Two"
+                           MattrSection.Content = "This is two\n" } |] }
                   "should be equal"
           }
 
@@ -199,22 +199,22 @@ let tests =
               let input: byte array = readBuffer "hr.md"
 
               Expect.equal
-                  (NewMattr.sections input)
-                  { Mattr.content = ""
-                    Mattr.sections =
-                      [| { MattrSection.key = "yaml"
-                           MattrSection.data = "title: I'm front matter"
-                           MattrSection.content =
+                  (NewMattr.Sections input)
+                  { Mattr.Content = ""
+                    Mattr.Sections =
+                      [| { MattrSection.Key = "yaml"
+                           MattrSection.Data = "title: I'm front matter"
+                           MattrSection.Content =
                              "\nThis page has front matter that should be parsed before the sections.\n" }
-                         { MattrSection.key = "aaa"
-                           MattrSection.data = "title: First section"
-                           MattrSection.content = "\nSection one.\n" }
-                         { MattrSection.key = "bbb"
-                           MattrSection.data = "title: Non-section horizontal rules"
-                           MattrSection.content = "\nPart 1.\n\n---\n\nPart 2.\n\n---\n\nPart 3.\n" }
-                         { MattrSection.key = "ccc"
-                           MattrSection.data = "title: Third section"
-                           MattrSection.content = "\nSection three.\n" } |] }
+                         { MattrSection.Key = "aaa"
+                           MattrSection.Data = "title: First section"
+                           MattrSection.Content = "\nSection one.\n" }
+                         { MattrSection.Key = "bbb"
+                           MattrSection.Data = "title: Non-section horizontal rules"
+                           MattrSection.Content = "\nPart 1.\n\n---\n\nPart 2.\n\n---\n\nPart 3.\n" }
+                         { MattrSection.Key = "ccc"
+                           MattrSection.Data = "title: Third section"
+                           MattrSection.Content = "\nSection three.\n" } |] }
                   "should be equal"
           }
 
