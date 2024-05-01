@@ -105,7 +105,7 @@ let tests =
                   "~~~\ntitle: bar\n~~~\n\nfoo\n~~~one\ntitle: One\n~~~\nThis is one"
 
               Expect.equal
-                  (NewMattr.Sections(input, (NewMattr.DefaultOption ()).SetDelimiter("~~~")))
+                  (NewMattr.Sections(input, (NewMattr.DefaultOption()).SetSectionDelimiter("~~~")))
                   { Mattr.Content = ""
                     Mattr.Sections =
                       [| { MattrSection.Key = ""
